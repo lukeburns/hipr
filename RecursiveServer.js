@@ -24,6 +24,10 @@ class RecursiveServer extends DNSServer {
     this.initOptions(options);
   }
 
+  use (...args) {
+    return this.resolver.use(...args);
+  }
+
   get cache() {
     return this.resolver.cache;
   }
