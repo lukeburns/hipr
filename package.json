@@ -1,0 +1,24 @@
+{
+  "name": "hipr",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "Luke Burns",
+  "license": "ISC",
+  "dependencies": {
+    "path-to-regexp": "^6.2.0"
+  },
+  "peerDependencies": {
+    "bns": "^0.15.0"
+  },
+  "devDependencies": {
+    "brittle": "^2.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lukeburns/hipr.git"
+  }
+}
