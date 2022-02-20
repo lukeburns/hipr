@@ -1,5 +1,5 @@
 const { RecursiveServer } = require('./index')
-const { wire, dnssec } = require('bns')
+const { wire, dnssec } = require('bns-plus')
 const { SOARecord, Record, codes, types, typesByVal } = wire
 
 const server = new RecursiveServer({
