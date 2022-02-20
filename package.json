@@ -12,7 +12,7 @@
     "path-to-regexp": "^6.2.0"
   },
   "peerDependencies": {
-    "bns": "^0.15.0"
+    "bns-plus": "^0.15.1"
   },
   "devDependencies": {
     "brittle": "^2.0.3"
