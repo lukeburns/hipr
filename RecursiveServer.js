@@ -1,12 +1,12 @@
 /*!
- * recursive.js - recursive dns server for bns
+ * recursive.js - recursive dns server for 
  * Copyright (c) 2018, Christopher Jeffrey (MIT License).
  * https://github.com/chjj/bns
  */
 
 'use strict';
 
-const DNSServer = require('bns/lib/server/dns');
+const DNSServer = require('bns-plus/lib/server/dns');
 const RecursiveResolver = require('./RecursiveResolver');
 
 /**
