@@ -11,16 +11,16 @@
 
 const assert = require('bsert');
 const IP = require('binet');
-const Authority = require('bns/lib/authority');
-const Cache = require('bns/lib/cache');
-const constants = require('bns/lib/constants');
-const DNSResolver = require('bns/lib/resolver/dns');
-const dnssec = require('bns/lib/dnssec');
-const encoding = require('bns/lib/encoding');
-const Hints = require('bns/lib/hints');
-const nsec3 = require('bns/lib/nsec3');
-const util = require('bns/lib/util');
-const wire = require('bns/lib/wire');
+const Authority = require('bns-plus/lib/authority');
+const Cache = require('bns-plus/lib/cache');
+const constants = require('bns-plus/lib/constants');
+const DNSResolver = require('bns-plus/lib/resolver/dns');
+const dnssec = require('bns-plus/lib/dnssec');
+const encoding = require('bns-plus/lib/encoding');
+const Hints = require('bns-plus/lib/hints');
+const nsec3 = require('bns-plus/lib/nsec3');
+const util = require('bns-plus/lib/util');
+const wire = require('bns-plus/lib/wire');
 const { match } = require('path-to-regexp');
 const {DNS_PORT} = constants;
 
