@@ -492,6 +492,15 @@ class RecursiveResolver extends DNSResolver {
   async next(rc) {
     await this.lookupNext(rc);
 
+    // Block DNS reverse-mapping queries to AS112 servers 
+    // https://datatracker.ietf.org/doc/html/rfc6305
+    const as112 = ['prisoner.iana.org.', 'blackhole-1.iana.org.', 'blackhole-2.iana.org.']
+    if (as112.indexOf(rc.auth.name) >= 0){
+      rc.res.code = codes.NXDOMAIN
+      rc.hit = true
+      return false
+    }
+
     if (rc.chain)
       await this.handleTrust(rc);
 
@@ -506,7 +515,6 @@ class RecursiveResolver extends DNSResolver {
         this.log('Validated NSEC3 NX proof.');
       }
     }
-
 
     if (rc.res.isAnswer())
       return this.handleAnswer(rc);
