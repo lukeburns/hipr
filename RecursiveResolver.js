@@ -559,7 +559,7 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      rc.res = await handler(m.params, name, type, rc.res, rc)
+      rc.res = await handler.call(this, m.params, name, type, rc.res, rc)
 
       return true
     }
