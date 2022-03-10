@@ -30,6 +30,12 @@ Then to install middleware, like [hipr-hyperzone](https://github.com/lukeburns/h
 hipr install hipr-hyperzone
 ```
 
+Then boot up a server running the middleware with
+
+```
+hipr hipr-hyperzone
+```
+
 By default, `hipr` will create a server that listens on port 53 and expects Bob wallet to be running a root server on port 9891, but you can override these defaults. For example, if you are running [hsd](https://github.com/handshake-org/hsd), you can use the authoritative server running (by default) on port `5349`
 
 ```
