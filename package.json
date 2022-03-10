@@ -1,8 +1,11 @@
 {
   "name": "hipr",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "hipr": "./bin/server.js"
+  },
   "scripts": {
     "test": "node test.js"
   },
