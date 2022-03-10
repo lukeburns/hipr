@@ -9,7 +9,7 @@ if (process.argv[2] === '--path') {
 
 if (process.argv[2] === '--install' || process.argv[2] === '-i' || process.argv[2] === 'install' || process.argv[2] === 'i') {
   if (process.argv[3]) {
-    const cmd = `npm i --no-save --legacy-peer-deps --prefix ${getPath()} ${process.argv[3]}`.split(' ')
+    const cmd = `npm i --legacy-peer-deps --prefix ${getPath()} ${process.argv[3]}`.split(' ')
     spawn(cmd[0], cmd.slice(1), { stdio: 'inherit' })
   } else {
     console.error('No package specified')
