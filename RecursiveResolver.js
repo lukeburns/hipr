@@ -545,8 +545,8 @@ class RecursiveResolver extends DNSResolver {
 
   async use (hostname, handler) {
     if (!handler && typeof hostname === 'object') {
-      const config = hostname
-      { hostname, handler } = config
+      hostname = hostname.hostname
+      handler = hostname.handler
     }
 
     // todo: if hostname is a fn, use as claimauthority
