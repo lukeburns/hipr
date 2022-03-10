@@ -8,8 +8,8 @@ HIP-5 but recursive
 const { RecursiveServer } = require('hipr') 
 const server = new RecursiveServer(options)
 
-server.use(':hip5data._:protocol', async ({ hip5data, protocol }, name, type) => {
-  const zone = await fetchZone(protocol, hip5data)
+server.use(':data._:protocol.', async ({ data, protocol }, name, type) => {
+  const zone = await fetchZone(protocol, data)
   return zone.resolve(name, type)
 })
 

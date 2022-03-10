@@ -496,7 +496,7 @@ class RecursiveResolver extends DNSResolver {
     // https://datatracker.ietf.org/doc/html/rfc6305
     const as112 = ['prisoner.iana.org.', 'blackhole-1.iana.org.', 'blackhole-2.iana.org.']
     if (as112.indexOf(rc.auth.name) >= 0){
-      rc.res.code = codes.NXDOMAIN
+      rc.res.code = codes.SERVFAIL
       rc.hit = true
       return false
     }
@@ -543,9 +543,14 @@ class RecursiveResolver extends DNSResolver {
     return false;
   }
 
-  async use (str, next) {
-    // todo: if str is a fn, use as claimauthority
-    const fn = match(str)
+  async use (hostname, handler) {
+    if (!handler && typeof hostname === 'object') {
+      const config = hostname
+      { hostname, handler } = config
+    }
+
+    // todo: if hostname is a fn, use as claimauthority
+    const fn = match(hostname)
     const layer = async (ns, rc) => {
       const m = fn(ns)
       if (!m) return false
@@ -554,7 +559,7 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      rc.res = await next(m.params, name, type, rc.res, rc)
+      rc.res = await handler(m.params, name, type, rc.res, rc)
 
       return true
     }
