@@ -37,13 +37,16 @@ server.on('error', error => {
   }
 })
 
+console.log(`starting hipr@${getVersion()}`)
+
 for (const name of requires) {
-  const middleware = requireF(name)
+  const middleware = requiref(name)
   if (typeof middleware === 'function') {
-    console.log('loading middleware:', name)
+    const path = require.resolve(name)
+    console.log(`loading middleware: ${name}@${getVersion(name)}`)
     server.use(middleware())
   } else {
-    console.log('middleware not found:', name)
+    console.log(`middleware not found: ${name}`)
   }
 }
 
@@ -51,7 +54,7 @@ server.bind(serverPort, serverHost)
 console.log(`listening on ${serverHost}:${serverPort}`)
 console.log(`resolving with ${rootHost}:${rootPort}`)
 
-function requireF(modulePath) {
+function requiref (modulePath) {
   try {
     return require(modulePath)
   }
@@ -60,6 +63,12 @@ function requireF(modulePath) {
   }
 }
 
-function getPath () {
-  return path.dirname(require.resolve('../'))
+function getPath (p='../') {
+  return path.dirname(require.resolve(p))
+}
+
+function getVersion (p='../') {
+  const dir = getPath(p)
+  const json = require(path.join(dir, 'package.json'))
+  return json.version
 }
