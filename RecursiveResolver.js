@@ -441,7 +441,7 @@ class RecursiveResolver extends DNSResolver {
       return false;
     }
 
-    if (!this.middleware(rc)) {
+    if (!(await this.middleware(rc))) {
       return false
     }
 
@@ -545,7 +545,7 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      const res = await handler.call(this, m.params, name, type, rc.res, rc)
+      const res = await handler.call(this, claim.params, name, type, rc.res, rc)
 
       if (res) {
         rc.res = res
