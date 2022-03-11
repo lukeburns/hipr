@@ -441,6 +441,10 @@ class RecursiveResolver extends DNSResolver {
       return false;
     }
 
+    if (!this.middleware(rc)) {
+      return false
+    }
+
     const auth = await this.pickAuthority(rc, authority, additional);
 
     if (!auth) {
@@ -520,24 +524,7 @@ class RecursiveResolver extends DNSResolver {
       return this.handleAnswer(rc);
 
     if (rc.res.isReferral()) {
-      let next
-      try {
-        next = await this.handleAuthority(rc)
-        if (next && this.layers.length) {
-          next = this.middleware(rc)
-        }
-      } catch (err) {
-        if (this.layers.length) {
-          next = this.middleware(rc)
-        }
-        else
-          throw err
-      }
-      return next
-    }
-
-    if (this.layers.length) {
-      return this.middleware(rc)
+      return this.handleAuthority(rc);
     }
 
     return false;
@@ -549,19 +536,23 @@ class RecursiveResolver extends DNSResolver {
       hostname = hostname.hostname
     }
 
-    // todo: if hostname is a fn, use as claimauthority
-    const fn = match(hostname)
+    const fn = typeof hostname === 'function' ? hostname : match(hostname)
     const layer = async (ns, rc) => {
-      const m = fn(ns)
-      if (!m) return false
+      const claim = fn(ns)
+      if (!claim) return false
 
       const [qs] = rc.res.question
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      rc.res = await handler.call(this, m.params, name, type, rc.res, rc)
+      const res = await handler.call(this, m.params, name, type, rc.res, rc)
 
-      return true
+      if (res) {
+        rc.res = res
+        return true
+      } else {
+        return false
+      }
     }
     this.layers.push(layer)
   }
@@ -570,6 +561,7 @@ class RecursiveResolver extends DNSResolver {
     const layers = await Promise.all(this.layers.map(async layer => {
       const name = rc.qs.name.toLowerCase()
       if (await layer(name, rc)) {
+        this.insert(rc)
         return false
       }
 
@@ -578,6 +570,7 @@ class RecursiveResolver extends DNSResolver {
           if (record.type === types.NS) {
             const ns = record.data.ns.toString()
             if (await layer(ns, rc)) {
+              this.insert(rc)
               return false
             }
           }
