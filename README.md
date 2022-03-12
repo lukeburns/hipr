@@ -41,3 +41,10 @@ hipr hipr-hyperzone:hipr-ipfs 127.0.0.1:5333 127.0.0.1:5349
 and listen on port 5333.
 
 Middleware should be `:`-separated as the first argument. Note that order matters. In the above example, hyperzones will take priority over ipfs zone files.
+
+## Middleware
+
+- [_hyperzone](https://github.com/lukeburns/hipr-hyperzone) for resolving from [Hyperzones](https://github.com/lukeburns/hyperzone)
+- [_ipfs](https://github.com/lukeburns/hipr-ipfs) for resolving zone files from IPFS
+- [_sia](https://github.com/lukeburns/hipr-sia) for resolving zone files from Sia
+- [_aliasing](https://github.com/lukeburns/hipr-aliasing) for trustless SLDs
