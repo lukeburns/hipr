@@ -46,5 +46,4 @@ Middleware should be `:`-separated as the first argument. Note that order matter
 
 - [_hyperzone](https://github.com/lukeburns/hipr-hyperzone) for resolving from [Hyperzones](https://github.com/lukeburns/hyperzone)
 - [_ipfs](https://github.com/lukeburns/hipr-ipfs) for resolving zone files from IPFS
-- [_sia](https://github.com/lukeburns/hipr-sia) for resolving zone files from Sia
 - [_aliasing](https://github.com/lukeburns/hipr-aliasing) for trustless SLDs
