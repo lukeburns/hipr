@@ -54,6 +54,7 @@ class RecursiveResolver extends DNSResolver {
     super(options);
 
     this.rd = false;
+    this.cacheMiddleware = false;
     this.cache = new Cache();
     this.hints = new Hints();
     this.maxReferrals = 30;
@@ -69,6 +70,11 @@ class RecursiveResolver extends DNSResolver {
       return this;
 
     this.parseOptions(options);
+
+    if (options.cacheMiddleware != null) {
+      assert(options.cacheMiddleware instanceof Boolean);
+      this.cacheMiddleware = options.cacheMiddleware;
+    }
 
     if (options.cache != null) {
       assert(options.cache instanceof Cache);
@@ -452,6 +458,12 @@ class RecursiveResolver extends DNSResolver {
     }
 
     if (!(await this.middleware(rc))) {
+      if (rc.res.isAnswer()) {
+        return this.handleAnswer(rc);
+      }
+      if (rc.res.isReferral()) {
+        return this.handleAuthority(rc);
+      }
       return false
     }
 
@@ -535,9 +547,8 @@ class RecursiveResolver extends DNSResolver {
     if (rc.res.isAnswer())
       return this.handleAnswer(rc);
 
-    if (rc.res.isReferral()) {
+    if (rc.res.isReferral())
       return this.handleAuthority(rc);
-    }
 
     return false;
   }
@@ -553,7 +564,7 @@ class RecursiveResolver extends DNSResolver {
       const claim = fn(ns)
       if (!claim) return false
 
-      const [qs] = rc.res.question
+      const qs = rc.qs
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
@@ -563,6 +574,7 @@ class RecursiveResolver extends DNSResolver {
 
       if (res) {
         rc.res = res
+        rc.res.question = [qs]
         return true
       } else {
         return false
@@ -575,7 +587,8 @@ class RecursiveResolver extends DNSResolver {
     const layers = await Promise.all(this.layers.map(async layer => {
       const name = rc.qs.name.toLowerCase()
       if (await layer(name, rc)) {
-        this.insert(rc)
+        if (this.cacheMiddleware) 
+          this.insert(rc)
         return false
       }
 
@@ -584,7 +597,8 @@ class RecursiveResolver extends DNSResolver {
           if (record.type === types.NS) {
             const ns = record.data.ns.toString()
             if (await layer(ns, rc)) {
-              this.insert(rc)
+              if (this.cacheMiddleware) 
+                this.insert(rc)
               return false
             }
           }

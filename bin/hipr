@@ -23,16 +23,18 @@ if (process.argv[2] === '--install' || process.argv[2] === '-i' || process.argv[
 
 const HOME = require('os').homedir()
 
-let [serverHost, serverPort] = (process.argv[3] || '127.0.0.1:53').split(':')
-let [rootHost, rootPort] = (process.argv[4] || '127.0.0.1:9891').split(':')
+let [serverHost, serverPort] = (process.argv[3] || ':53').split(':')
+let [rootHost, rootPort] = (process.argv[4] || ':5349').split(':')
+serverHost = serverHost || '127.0.0.1'
 serverPort = parseInt(serverPort || 53)
+rootHost = rootHost || '127.0.0.1'
 rootPort = parseInt(rootPort || 53)
 
 const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
 const { RecursiveServer, createDS } = require('../index')
 
-const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: true })
+const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: false })
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
@@ -47,6 +49,7 @@ if (process.argv.indexOf('--log') >= 0) {
   server.on('query', (req, res, rinfo) => {
     console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
   })
+  server.on('log', console.log)
   server.on('error', error => {
     console.log(error.message)
   })
