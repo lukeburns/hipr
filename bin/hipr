@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
+const chalk = require('chalk')
 const path = require('path')
+const util = require('util')
 const { spawn } = require('child_process')
+
+const colors = new Map()
 
 if (process.argv[2] === '--path') {
   return process.stdout.write(getPath())
@@ -28,19 +32,23 @@ const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
 const { RecursiveServer, createDS } = require('../index')
 
-const server = new RecursiveServer({ tcp: true, inet6: false, edns: true })
-server.parseOptions({ dnssec: true }) // todo: fix (https://discord.com/channels/822591034202521641/936327800892317766/943527417383886848)
+const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: true })
 server.resolver.setStub(rootHost, rootPort, createDS())
-server.on('error', error => {
-  if (process.env.DEBUG) {
-    console.error(error)
-  }
-})
 
 if (process.argv.indexOf('--log') >= 0) {
+  server.resolver.on('intercept', (claim, name, type) => {
+    const { protocol, data } = claim.params
+    if (protocol) {
+      colors.get(protocol) || colors.set(protocol, color(0.5))
+      const c = chalk.rgb(...colors.get(protocol))
+      console.log(c`[${protocol}] ${name} ${type} @ ${data}`)
+    }
+  })
   server.on('query', (req, res, rinfo) => {
-    console.log('Incoming request:')
-    console.log(req.toString())
+    console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
+  })
+  server.on('error', error => {
+    console.log(error.message)
   })
 }
 
@@ -78,4 +86,36 @@ function getVersion (p='../') {
   const dir = getPath(p)
   const json = require(path.join(dir, 'package.json'))
   return json.version
+}
+
+// https://martin.ankerl.com/2009/12/09/how-to-create-random-colors-programmatically/
+function color (saturation = 0.5) {
+  let hue = Math.random()
+  hue += 0.618033988749895
+  hue %= 1
+
+  return hsv_to_rgb({
+    h: hue,
+    s: saturation,
+    v: 0.95,
+  })
+}
+
+function hsv_to_rgb ({ h, s, v }) {
+  const h_i = Math.floor(6*h)
+  const f = 6*h - h_i
+  const p = v * (1 - s)
+  const q = v * (1 - f*s)
+  const t = v * (1 - (1 - f) * s)
+
+  let r, g, b
+
+  if (h_i === 0) [r, g, b] = [v, t, p]
+  if (h_i === 1) [r, g, b] = [q, v, p]
+  if (h_i === 2) [r, g, b] = [p, v, t]
+  if (h_i === 3) [r, g, b] = [p, q, v]
+  if (h_i === 4) [r, g, b] = [t, p, v]
+  if (h_i === 5) [r, g, b] = [v, p, q]
+
+  return [Math.floor(r*256), Math.floor(g*256), Math.floor(b*256)]
 }

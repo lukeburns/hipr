@@ -274,7 +274,9 @@ class RecursiveResolver extends DNSResolver {
     return true;
   }
 
-  splitAuths(authority, additional) {
+  splitAuths(rc, authority, additional) {
+    const qs = rc.qs;
+
     const zones = new Map();
     const nsmap = new Map();
 
@@ -285,6 +287,11 @@ class RecursiveResolver extends DNSResolver {
 
     for (const rr of additional) {
       const zone = nsmap.get(rr.name.toLowerCase());
+
+      if (rr.name === qs.name) {
+        rc.res.answer = [rr]
+        break;
+      }
 
       if (!zone)
         continue;
@@ -311,7 +318,10 @@ class RecursiveResolver extends DNSResolver {
   }
 
   async pickAuthority(rc, authority, additional) {
-    const [zones, nsmap] = this.splitAuths(authority, additional);
+    const [zones, nsmap] = this.splitAuths(rc, authority, additional);
+
+    if (rc.res.isAnswer())
+      return null
 
     if (zones.size === 0) {
       if (nsmap.size === 0)
@@ -448,6 +458,8 @@ class RecursiveResolver extends DNSResolver {
     const auth = await this.pickAuthority(rc, authority, additional);
 
     if (!auth) {
+      if (rc.res.isAnswer())
+        return this.handleAnswer(rc);
       this.insert(rc);
       return false;
     }
@@ -544,6 +556,8 @@ class RecursiveResolver extends DNSResolver {
       const [qs] = rc.res.question
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
+
+      this.emit('intercept', claim, name, type, rc)
 
       const res = await handler.call(this, claim.params, name, type, rc.res, rc)
 

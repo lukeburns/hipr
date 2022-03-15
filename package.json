@@ -15,6 +15,7 @@
     "binet": "^0.3.7",
     "bns": "^0.15.0",
     "bsert": "^0.0.10",
+    "chalk": "^4.1.2",
     "path-to-regexp": "^6.2.0"
   },
   "devDependencies": {
