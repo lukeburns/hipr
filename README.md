@@ -34,7 +34,7 @@ Then boot up a server running the middleware with
 hipr hipr-hyperzone:hipr-ipfs
 ```
 
-By default, `hipr` will create a server that listens on port 53 and expects Bob wallet to be running a root server on port 9891, but you can override these defaults. For example, if you are running [hsd](https://github.com/handshake-org/hsd), you can use the authoritative server running (by default) on port `5349`
+By default, `hipr` will create a server that listens on port 53 and expects Bob wallet to be running a root server on port 9891, but you can override these defaults. For example, if you are running [hsd](https://github.com/handshake-org/hsd) or [hnsd](https://github.com/handshake-org/hnsd), you can use the authoritative server running (by default) on port `5349`
 ```
 hipr hipr-hyperzone:hipr-ipfs 127.0.0.1:5333 127.0.0.1:5349
 ```
