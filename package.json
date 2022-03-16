@@ -1,6 +1,6 @@
 {
   "name": "hipr",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "",
   "main": "index.js",
   "bin": {
@@ -16,7 +16,8 @@
     "bns": "^0.15.0",
     "bsert": "^0.0.10",
     "chalk": "^4.1.2",
-    "path-to-regexp": "^6.2.0"
+    "path-to-regexp": "^6.2.0",
+    "pretty-hash": "^1.0.1"
   },
   "devDependencies": {
     "brittle": "^2.0.3"

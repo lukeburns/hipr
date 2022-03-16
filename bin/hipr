@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const chalk = require('chalk')
+const pretty = require('pretty-hash')
 const path = require('path')
 const util = require('util')
 const { spawn } = require('child_process')
@@ -38,22 +39,40 @@ const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
-  server.resolver.on('intercept', (claim, name, type, ns) => {
+  server.resolver.on('intercept:req', (claim, name, type, ns) => {
+    name = name.split('.').map(label => label.length > 20 ? pretty(label) : label).join('.')
     const { protocol, data } = claim.params
     if (protocol) {
       colors.get(protocol) || colors.set(protocol, color(0.5))
       const c = chalk.rgb(...colors.get(protocol))
-      const parent = ns.name.slice(0, ns.name.length-1)
-      console.log(c`[${protocol}@${parent}]`, `${name} ${type} @ ${data}`)
+      let parent = ns.name.slice(0, ns.name.length-1)
+      parent = parent.split('.').map(label => label.length > 20 ? pretty(label) : label).join('.')
+      console.log(c`[${protocol}@${parent}]`, `${name} ${type} @ ${pretty(data)}.`+c(protocol))
     }
   })
-  server.on('query', (req, res, rinfo) => {
-    console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
+
+  server.resolver.on('intercept:res', (claim, name, type, ns, res) => {
+    const { protocol, data } = claim.params
+    colors.get(protocol) || colors.set(protocol, color(0.5))
+    const c = chalk.rgb(...colors.get(protocol))
+    if (protocol && res) {
+      if (res.answer.length) {
+        console.log(c`  → ${res.answer[0]}`)
+      } else {
+        console.log(c`  → No answer yet`)
+      }
+    }
   })
-  server.on('log', console.log)
-  server.on('error', error => {
-    console.log(error.message)
-  })
+
+  if (process.argv.indexOf('--debug') >= 0) {
+    server.on('query', (req, res, rinfo) => {
+      console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
+    })
+    server.on('log', console.log)
+    server.on('error', error => {
+      console.log(error.message)
+    })
+  }
 }
 
 console.log(`starting hipr@${getVersion()}`)

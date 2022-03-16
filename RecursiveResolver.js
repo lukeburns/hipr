@@ -568,9 +568,9 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      this.emit('intercept', claim, name, type, record, rc)
-
+      this.emit('intercept:req', claim, name, type, record, rc)
       const res = await handler.call(this, claim.params, name, type, rc.res, rc, record)
+      this.emit('intercept:res', claim, name, type, record, res, rc)
 
       if (res) {
         rc.res = res
