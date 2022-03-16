@@ -34,16 +34,17 @@ const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
 const { RecursiveServer, createDS } = require('../index')
 
-const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: false })
+const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: process.argv.indexOf('--dnssec') >= 0 })
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
-  server.resolver.on('intercept', (claim, name, type) => {
+  server.resolver.on('intercept', (claim, name, type, ns) => {
     const { protocol, data } = claim.params
     if (protocol) {
       colors.get(protocol) || colors.set(protocol, color(0.5))
       const c = chalk.rgb(...colors.get(protocol))
-      console.log(c`[${protocol}] ${name} ${type} @ ${data}`)
+      const parent = ns.name.slice(0, ns.name.length-1)
+      console.log(c`[${protocol}@${parent}]`, `${name} ${type} @ ${data}`)
     }
   })
   server.on('query', (req, res, rinfo) => {

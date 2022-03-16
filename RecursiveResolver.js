@@ -560,7 +560,7 @@ class RecursiveResolver extends DNSResolver {
     }
 
     const fn = typeof hostname === 'function' ? hostname : match(hostname)
-    const layer = async (ns, rc) => {
+    const layer = async (ns, rc, record) => {
       const claim = fn(ns)
       if (!claim) return false
 
@@ -568,9 +568,9 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
-      this.emit('intercept', claim, name, type, rc)
+      this.emit('intercept', claim, name, type, record, rc)
 
-      const res = await handler.call(this, claim.params, name, type, rc.res, rc)
+      const res = await handler.call(this, claim.params, name, type, rc.res, rc, record)
 
       if (res) {
         rc.res = res
@@ -586,7 +586,7 @@ class RecursiveResolver extends DNSResolver {
   async middleware (rc) {
     const layers = await Promise.all(this.layers.map(async layer => {
       const name = rc.qs.name.toLowerCase()
-      if (await layer(name, rc)) {
+      if (await layer(name, rc, rc.qs)) {
         if (this.cacheMiddleware) 
           this.insert(rc)
         return false
@@ -596,7 +596,7 @@ class RecursiveResolver extends DNSResolver {
         for (const record of rc.res.authority) {
           if (record.type === types.NS) {
             const ns = record.data.ns.toString()
-            if (await layer(ns, rc)) {
+            if (await layer(ns, rc, record)) {
               if (this.cacheMiddleware) 
                 this.insert(rc)
               return false
