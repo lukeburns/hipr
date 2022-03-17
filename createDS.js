@@ -1,7 +1,7 @@
 const { Zone, wire, dnssec } = require('bns')
 const { SOARecord, Record, codes, types } = wire
 
-module.exports = createDS
+module.exports = { createDS, sendSoa }
 
 function createDS () {
   const ksk = Record.fromJSON({

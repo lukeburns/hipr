@@ -54,7 +54,6 @@ class RecursiveResolver extends DNSResolver {
     super(options);
 
     this.rd = false;
-    this.cacheMiddleware = false;
     this.cache = new Cache();
     this.hints = new Hints();
     this.maxReferrals = 30;
@@ -70,11 +69,6 @@ class RecursiveResolver extends DNSResolver {
       return this;
 
     this.parseOptions(options);
-
-    if (options.cacheMiddleware != null) {
-      assert(options.cacheMiddleware instanceof Boolean);
-      this.cacheMiddleware = options.cacheMiddleware;
-    }
 
     if (options.cache != null) {
       assert(options.cache instanceof Cache);
@@ -544,6 +538,8 @@ class RecursiveResolver extends DNSResolver {
       }
     }
 
+    await this.middleware(rc);
+
     if (rc.res.isAnswer())
       return this.handleAnswer(rc);
 
@@ -568,6 +564,7 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase()
       const type = wire.typesByVal[qs.type]
 
+      const parent = ns.name
       this.emit('intercept:req', claim, name, type, record, rc)
       const res = await handler.call(this, claim.params, name, type, rc.res, rc, record)
       this.emit('intercept:res', claim, name, type, record, res, rc)
@@ -587,8 +584,6 @@ class RecursiveResolver extends DNSResolver {
     const layers = await Promise.all(this.layers.map(async layer => {
       const name = rc.qs.name.toLowerCase()
       if (await layer(name, rc, rc.qs)) {
-        if (this.cacheMiddleware) 
-          this.insert(rc)
         return false
       }
 
@@ -597,8 +592,6 @@ class RecursiveResolver extends DNSResolver {
           if (record.type === types.NS) {
             const ns = record.data.ns.toString()
             if (await layer(ns, rc, record)) {
-              if (this.cacheMiddleware) 
-                this.insert(rc)
               return false
             }
           }

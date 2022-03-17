@@ -57,9 +57,13 @@ if (process.argv.indexOf('--log') >= 0) {
     const c = chalk.rgb(...colors.get(protocol))
     if (protocol && res) {
       if (res.answer.length) {
-        console.log(c`  → ${res.answer[0]}`)
-      } else {
-        console.log(c`  → No answer yet`)
+        console.log(c`  → Found answer: ${res.answer[0]}`)
+      }
+      if (res.authority.length) {
+        console.log(c`  → Found authority: ${res.authority[0]}`)
+      }
+      if (!res.answer.length && !res.authority.length) {
+        console.log(c`  → No answer or authority`)
       }
     }
   })
