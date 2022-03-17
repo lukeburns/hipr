@@ -35,7 +35,8 @@ const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
 const { RecursiveServer, createDS } = require('../index')
 
-const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec: process.argv.indexOf('--dnssec') >= 0 })
+const dnssec = process.argv.indexOf('--nodnssec') < 0
+const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec })
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
@@ -79,7 +80,7 @@ if (process.argv.indexOf('--log') >= 0) {
   }
 }
 
-console.log(`starting hipr@${getVersion()}`)
+console.log(`starting hipr@${getVersion()} with dnssec ${dnssec ? 'enabled' : 'disabled'}`)
 
 for (const name of requires) {
   const middleware = requiref(name)
