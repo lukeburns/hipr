@@ -33,6 +33,7 @@ Middleware should be `:`-separated as the first argument. Note that order may ma
 - [_hyperzone](https://github.com/lukeburns/hipr-hyperzone) for resolving records from [Hyperzones](https://github.com/lukeburns/hyperzone)
 - [_ipfs](https://github.com/lukeburns/hipr-ipfs) for resolving zone files from IPFS
 - [_aliasing](https://github.com/lukeburns/hipr-aliasing) for trustless SLDs on Handshake
+- [_eth](https://github.com/lukeburns/hipr-eth) for resolving from Ethereum via ENS
 
 ## API
 
