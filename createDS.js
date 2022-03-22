@@ -1,7 +1,7 @@
-const { Zone, wire, dnssec } = require('bns')
-const { SOARecord, Record, codes, types } = wire
+const { Zone, wire, dnssec } = require('bns');
+const { SOARecord, Record, codes, types } = wire;
 
-module.exports = { createDS, sendSoa }
+module.exports = { createDS, sendSoa };
 
 function createDS () {
   const ksk = Record.fromJSON({
@@ -13,12 +13,12 @@ function createDS () {
       flags: 257,
       protocol: 3,
       algorithm: 13,
-      publicKey: ''
-        + 'T9cURJ2M/Mz9q6UsZNY+Ospyvj+Uv+tgrrWkLtPQwgU/Xu5Yk0l02Sn5ua2x'
-        + 'AQfEYIzRO6v5iA+BejMeEwNP4Q=='
+      publicKey: '' +
+        'T9cURJ2M/Mz9q6UsZNY+Ospyvj+Uv+tgrrWkLtPQwgU/Xu5Yk0l02Sn5ua2x' +
+        'AQfEYIzRO6v5iA+BejMeEwNP4Q=='
     }
-  })
-  return dnssec.createDS(ksk, dnssec.hashes.SHA256)
+  });
+  return dnssec.createDS(ksk, dnssec.hashes.SHA256);
 }
 
 const DEFAULT_TTL = 21600;
@@ -30,35 +30,33 @@ const serial = () => {
   const d = date.getUTCDate() * 1e2;
   const h = date.getUTCHours();
   return y + m + d + h;
-}
-
+};
 
 function toSOA () {
-    const rr = new Record();
-    const rd = new SOARecord();
+  const rr = new Record();
+  const rd = new SOARecord();
 
-    rr.name = '.';
-    rr.type = types.SOA;
-    rr.ttl = 86400;
-    rr.data = rd;
-    rd.ns = '.';
-    rd.mbox = '.';
-    rd.serial = serial();
-    rd.refresh = 1800;
-    rd.retry = 900;
-    rd.expire = 604800;
-    rd.minttl = DEFAULT_TTL;
+  rr.name = '.';
+  rr.type = types.SOA;
+  rr.ttl = 86400;
+  rr.data = rd;
+  rd.ns = '.';
+  rd.mbox = '.';
+  rd.serial = serial();
+  rd.refresh = 1800;
+  rd.retry = 900;
+  rd.expire = 604800;
+  rd.minttl = DEFAULT_TTL;
 
-    return rr;
+  return rr;
 }
 
 function sendSoa () {
-  const res = new wire.Message()
-  res.aa = true
-  res.authority.push(toSOA())
+  const res = new wire.Message();
+  res.aa = true;
+  res.authority.push(toSOA());
 
   // this.ns.signRRSet(res.authority, wire.types.SOA) // get signing right
 
-  return res
+  return res;
 }
-

@@ -22,7 +22,7 @@ const nsec3 = require('bns/lib/nsec3');
 const util = require('bns/lib/util');
 const wire = require('bns/lib/wire');
 const { match } = require('path-to-regexp');
-const {DNS_PORT} = constants;
+const { DNS_PORT } = constants;
 
 const {
   Message,
@@ -50,7 +50,7 @@ const {
  */
 
 class RecursiveResolver extends DNSResolver {
-  constructor(options) {
+  constructor (options) {
     super(options);
 
     this.rd = false;
@@ -64,9 +64,8 @@ class RecursiveResolver extends DNSResolver {
     this.initOptions(options);
   }
 
-  initOptions(options) {
-    if (options == null)
-      return this;
+  initOptions (options) {
+    if (options == null) { return this; }
 
     this.parseOptions(options);
 
@@ -103,7 +102,7 @@ class RecursiveResolver extends DNSResolver {
     return this;
   }
 
-  setStub(host, port, ds) {
+  setStub (host, port, ds) {
     assert(typeof host === 'string');
     assert((port & 0xffff) === port);
     assert(port !== 0);
@@ -115,10 +114,7 @@ class RecursiveResolver extends DNSResolver {
     this.hints.clear();
     this.hints.ns.push('hints.local.');
 
-    if (IP.isIPv4String(ip))
-      this.hints.inet4.set('hints.local.', ip);
-    else
-      this.hints.inet6.set('hints.local.', ip);
+    if (IP.isIPv4String(ip)) { this.hints.inet4.set('hints.local.', ip); } else { this.hints.inet6.set('hints.local.', ip); }
 
     this.hints.anchors.push(ds.clone());
     this.hints.port = port;
@@ -126,11 +122,11 @@ class RecursiveResolver extends DNSResolver {
     return this;
   }
 
-  getAuthority() {
+  getAuthority () {
     return this.hints.getAuthority(this.inet6);
   }
 
-  async ask(qs, auth) {
+  async ask (qs, auth) {
     const cache = this.cache.hit(qs, auth.zone);
 
     if (cache) {
@@ -143,32 +139,30 @@ class RecursiveResolver extends DNSResolver {
     return [res, false];
   }
 
-  async findNS(rc, name, type, zone) {
+  async findNS (rc, name, type, zone) {
     const qs = new Question(name, type);
     const child = await this.follow(qs, rc.hops);
     const res = child.toAnswer();
 
     rc.hops = child.hops;
 
-    if (res.code !== codes.NOERROR)
-      throw new Error('Authority lookup failed.');
+    if (res.code !== codes.NOERROR) { throw new Error('Authority lookup failed.'); }
 
-    const addrs = extractSet(res.answer, name, type);
-
-    if (addrs.length === 0)
+    const addrs = extractSet([...res.answer, ...res.additional], name, type);
+    if (addrs.length === 0) {
       throw new Error('No authority address.');
+    }
 
     const auth = new Authority(zone, name);
 
-    for (const addr of addrs)
-      auth.add(addr.data.address, DNS_PORT);
+    for (const addr of addrs) { auth.add(addr.data.address, DNS_PORT); }
 
     this.log('Picked nameserver for: %s', name);
 
     return auth;
   }
 
-  async lookupNS(rc, name, zone) {
+  async lookupNS (rc, name, zone) {
     rc.hop();
 
     if (this.inet6) {
@@ -185,11 +179,11 @@ class RecursiveResolver extends DNSResolver {
     return this.findNS(rc, name, types.A, zone);
   }
 
-  async lookupDNSKEY(qs, auth, ds) {
+  async lookupDNSKEY (qs, auth, ds) {
     const [res, hit] = await this.ask(qs, auth);
 
-    if (res.answer.length === 0
-        || res.code !== codes.NOERROR) {
+    if (res.answer.length === 0 ||
+        res.code !== codes.NOERROR) {
       return [new Map(), new Set()];
     }
 
@@ -227,16 +221,13 @@ class RecursiveResolver extends DNSResolver {
 
     // Grab all ZSK's from the answer.
     for (const rr of res.answer) {
-      if (rr.type !== types.DNSKEY)
-        continue;
+      if (rr.type !== types.DNSKEY) { continue; }
 
       const rd = rr.data;
 
-      if (!equal(rr.name, qs.name))
-        continue;
+      if (!equal(rr.name, qs.name)) { continue; }
 
-      if (!(rd.flags & dnssec.keyFlags.ZONE))
-        continue;
+      if (!(rd.flags & dnssec.keyFlags.ZONE)) { continue; }
 
       if (rd.flags & dnssec.keyFlags.REVOKE) {
         revSet.add(rd.revTag());
@@ -249,15 +240,13 @@ class RecursiveResolver extends DNSResolver {
     return [zskMap, revSet];
   }
 
-  async checkSignatures(msg, auth, ds) {
-    if (!this.dnssec)
-      return true;
+  async checkSignatures (msg, auth, ds) {
+    if (!this.dnssec) { return true; }
 
     const qs = new Question(auth.zone, types.DNSKEY);
     const [zskMap, revSet] = await this.lookupDNSKEY(qs, auth, ds);
 
-    if (!zskMap)
-      return false;
+    if (!zskMap) { return false; }
 
     if (zskMap.size === 0) {
       this.log('No ZSKs found.');
@@ -274,34 +263,30 @@ class RecursiveResolver extends DNSResolver {
     return true;
   }
 
-  splitAuths(rc, authority, additional) {
+  splitAuths (rc, authority, additional) {
     const qs = rc.qs;
 
     const zones = new Map();
     const nsmap = new Map();
 
     for (const rr of authority) {
-      if (rr.type === types.NS)
-        nsmap.set(rr.data.ns.toLowerCase(), rr.name.toLowerCase());
+      if (rr.type === types.NS) { nsmap.set(rr.data.ns.toLowerCase(), rr.name.toLowerCase()); }
     }
 
     for (const rr of additional) {
       const zone = nsmap.get(rr.name.toLowerCase());
 
       if (rr.name === qs.name) {
-        rc.res.answer = [rr]
+        rc.res.answer = [rr];
         break;
       }
 
-      if (!zone)
-        continue;
+      if (!zone) { continue; }
 
       if (this.inet6) {
-        if (rr.type !== types.A && rr.type !== types.AAAA)
-          continue;
+        if (rr.type !== types.A && rr.type !== types.AAAA) { continue; }
       } else {
-        if (rr.type !== types.A)
-          continue;
+        if (rr.type !== types.A) { continue; }
       }
 
       let items = zones.get(zone);
@@ -317,22 +302,21 @@ class RecursiveResolver extends DNSResolver {
     return [zones, nsmap];
   }
 
-  async pickAuthority(rc, authority, additional) {
+  async pickAuthority (rc, authority, additional) {
     const [zones, nsmap] = this.splitAuths(rc, authority, additional);
 
-    if (rc.res.isAnswer())
-      return null
+    if (rc.res.isAnswer()) { return null; }
 
-    if (zones.size === 0) {
-      if (nsmap.size === 0)
-        return null;
+    // tmp fix: checking if `zones.size < nsmap.size` in case the servers in additional are down
+    // e.g. rfc-editor.org has a single A record 12.22.58.2 in additional, but the server is down
+    if (zones.size === 0 || zones.size < nsmap.size) {
+      if (nsmap.size === 0) { return null; }
 
       let i = random(nsmap.size);
       let ns, zone;
 
       for ([ns, zone] of nsmap) {
-        if (i === 0)
-          break;
+        if (i === 0) { break; }
         i -= 1;
       }
 
@@ -345,12 +329,10 @@ class RecursiveResolver extends DNSResolver {
 
     for (const [ns, zone] of nsmap) {
       const items = zones.get(zone);
-      if (items && items.length > 0)
-        set.push([ns, zone]);
+      if (items && items.length > 0) { set.push([ns, zone]); }
     }
 
-    if (set.length === 0)
-      return null;
+    if (set.length === 0) { return null; }
 
     const [ns, zone] = randomItem(set);
     const items = zones.get(zone);
@@ -358,20 +340,19 @@ class RecursiveResolver extends DNSResolver {
 
     const auth = new Authority(zone, ns);
 
-    for (const host of items)
-      auth.add(host, DNS_PORT);
+    for (const host of items) { auth.add(host, DNS_PORT); }
 
     return auth;
   }
 
-  insert(rc) {
+  insert (rc) {
     if (!rc.hit) {
-      const {qs, auth, res, chain} = rc;
+      const { qs, auth, res, chain } = rc;
       this.cache.insert(qs, auth.zone, res, chain);
     }
   }
 
-  async handleTrust(rc) {
+  async handleTrust (rc) {
     assert(rc.chain);
 
     this.log('Verifying zone change to [%s]', rc.auth.zone);
@@ -403,7 +384,7 @@ class RecursiveResolver extends DNSResolver {
     }
   }
 
-  async handleAnswer(rc) {
+  async handleAnswer (rc) {
     const [alias, chased] = isAlias(rc.res.answer, rc.qs);
 
     if (!alias) {
@@ -411,8 +392,7 @@ class RecursiveResolver extends DNSResolver {
       return false;
     }
 
-    if (rc.aliases.has(alias))
-      throw new Error('Alias loop.');
+    if (rc.aliases.has(alias)) { throw new Error('Alias loop.'); }
 
     this.insert(rc);
 
@@ -428,8 +408,8 @@ class RecursiveResolver extends DNSResolver {
     return true;
   }
 
-  async handleAuthority(rc) {
-    const {authority, additional} = rc.res;
+  async handleAuthority (rc) {
+    const { authority, additional } = rc.res;
 
     const hasNS = hasType(authority, types.NS);
 
@@ -458,14 +438,13 @@ class RecursiveResolver extends DNSResolver {
       if (rc.res.isReferral()) {
         return this.handleAuthority(rc);
       }
-      return false
+      return false;
     }
 
     const auth = await this.pickAuthority(rc, authority, additional);
 
     if (!auth) {
-      if (rc.res.isAnswer())
-        return this.handleAnswer(rc);
+      if (rc.res.isAnswer()) { return this.handleAnswer(rc); }
       this.insert(rc);
       return false;
     }
@@ -505,26 +484,25 @@ class RecursiveResolver extends DNSResolver {
     return true;
   }
 
-  async lookupNext(rc) {
+  async lookupNext (rc) {
     const [res, hit] = await this.ask(rc.qs, rc.auth);
     rc.res = res;
     rc.hit = hit;
   }
 
-  async next(rc) {
+  async next (rc) {
     await this.lookupNext(rc);
 
-    // Block DNS reverse-mapping queries to AS112 servers 
+    // Block DNS reverse-mapping queries to AS112 servers
     // https://datatracker.ietf.org/doc/html/rfc6305
-    const as112 = ['prisoner.iana.org.', 'blackhole-1.iana.org.', 'blackhole-2.iana.org.']
-    if (as112.indexOf(rc.auth.name) >= 0){
-      rc.res.code = codes.SERVFAIL
-      rc.hit = true
-      return false
+    const as112 = ['prisoner.iana.org.', 'blackhole-1.iana.org.', 'blackhole-2.iana.org.'];
+    if (as112.indexOf(rc.auth.name) >= 0) {
+      rc.res.code = codes.SERVFAIL;
+      rc.hit = true;
+      return false;
     }
 
-    if (rc.chain)
-      await this.handleTrust(rc);
+    if (rc.chain) { await this.handleTrust(rc); }
 
     if (rc.chain && rc.res.code === codes.NXDOMAIN) {
       const nsec = extractSet(rc.res.authority, '', types.NSEC3);
@@ -540,104 +518,100 @@ class RecursiveResolver extends DNSResolver {
 
     await this.middleware(rc);
 
-    if (rc.res.isAnswer())
-      return this.handleAnswer(rc);
+    if (rc.res.isAnswer()) { return this.handleAnswer(rc); }
 
-    if (rc.res.isReferral())
-      return this.handleAuthority(rc);
+    if (rc.res.isReferral()) { return this.handleAuthority(rc); }
 
     return false;
   }
 
   async use (hostname, handler) {
     if (!handler && typeof hostname === 'object') {
-      handler = hostname.handler
-      hostname = hostname.hostname
+      handler = hostname.handler;
+      hostname = hostname.hostname;
     }
 
-    const fn = typeof hostname === 'function' ? hostname : match(hostname)
+    const fn = typeof hostname === 'function' ? hostname : match(hostname);
     const layer = async (ns, rc, record) => {
-      const claim = fn(ns)
-      if (!claim) return false
+      const claim = fn(ns);
+      if (!claim) return false;
 
-      const qs = rc.qs
-      const name = qs.name.toLowerCase()
-      const type = wire.typesByVal[qs.type]
+      const qs = rc.qs;
+      const name = qs.name.toLowerCase();
+      const type = wire.typesByVal[qs.type];
 
-      const parent = ns.name
-      this.emit('intercept:req', claim, name, type, record, rc)
-      const res = await handler.call(this, claim.params, name, type, rc.res, rc, record)
-      this.emit('intercept:res', claim, name, type, record, res, rc)
+      const parent = ns.name;
+      this.emit('intercept:req', claim, name, type, record, rc);
+      const res = await handler.call(this, claim.params, name, type, rc.res, rc, record);
+      this.emit('intercept:res', claim, name, type, record, res, rc);
 
       if (res) {
-        rc.res = res
-        rc.res.question = [qs]
-        return true
+        rc.res = res;
+        rc.res.question = [qs];
+        return true;
       } else {
-        return false
+        return false;
       }
-    }
-    this.layers.push(layer)
+    };
+    this.layers.push(layer);
   }
 
   async middleware (rc) {
     const layers = await Promise.all(this.layers.map(async layer => {
-      const name = rc.qs.name.toLowerCase()
+      const name = rc.qs.name.toLowerCase();
       if (await layer(name, rc, rc.qs)) {
-        return false
+        return false;
       }
 
       if (rc.res.authority.length) {
         for (const record of rc.res.authority) {
           if (record.type === types.NS) {
-            const ns = record.data.ns.toString()
+            const ns = record.data.ns.toString();
             if (await layer(ns, rc, record)) {
-              return false
+              return false;
             }
           }
         }
       }
 
-      return true
-    }))
+      return true;
+    }));
 
-    return !!layers.reduce((prev, next) => prev * next, true)
+    return !!layers.reduce((prev, next) => prev * next, true);
   }
 
-  async iterate(rc) {
+  async iterate (rc) {
     this.log('Querying %s (%s).', rc.qs.name, typeToString(rc.qs.type));
 
     this.log('Switching authority: %s', rc.auth.name);
     this.log('Switching zone: [%s]', rc.auth.zone);
 
     for (;;) {
-      if (!await this.next(rc))
-        break;
+      if (!await this.next(rc)) { break; }
     }
 
     assert(rc.hops <= rc.maxReferrals);
 
     this.log(
-      'Traversed zones: %s for %s (%s).',
+      'Traversed zones: %s for %s (%s) (hops=%s).',
       rc.zones.join(', '),
       rc.question.name,
-      typeToString(rc.question.type)
+      typeToString(rc.question.type),
+      rc.hops
     );
 
-    if (rc.res.code === codes.NOERROR
-        || rc.res.answer.length > 0
-        || rc.res.authority.length > 0) {
-      if (rc.chased.length > 0)
-        rc.res.answer = rc.chased.concat(rc.res.answer);
+    if (rc.res.code === codes.NOERROR ||
+        rc.res.answer.length > 0 ||
+        rc.res.authority.length > 0) {
+      if (rc.chased.length > 0) { rc.res.answer = rc.chased.concat(rc.res.answer); }
 
-      if (!rc.hit)
-        this.cache.insert(rc.question, rc.ns.zone, rc.res, rc.chain);
+      if (!rc.hit) { this.cache.insert(rc.question, rc.ns.zone, rc.res, rc.chain); }
     }
 
     return rc;
   }
 
-  async follow(qs, hops) {
+  async follow (qs, hops) {
     assert(qs instanceof Question);
     assert(typeof hops === 'number');
 
@@ -650,11 +624,10 @@ class RecursiveResolver extends DNSResolver {
     return this.iterate(rc);
   }
 
-  async resolve(qs) {
+  async resolve (qs) {
     assert(qs instanceof Question);
 
-    if (!util.isName(qs.name))
-      throw new Error('Invalid qname.');
+    if (!util.isName(qs.name)) { throw new Error('Invalid qname.'); }
 
     const rc = await this.follow(qs, 0);
 
@@ -669,12 +642,12 @@ class RecursiveResolver extends DNSResolver {
     return rc.toAnswer();
   }
 
-  async lookup(name, type) {
+  async lookup (name, type) {
     const qs = new Question(name, type);
     return this.resolve(qs);
   }
 
-  async reverse(addr) {
+  async reverse (addr) {
     const name = encoding.reverse(addr);
     return this.lookup(name, types.PTR);
   }
@@ -685,7 +658,7 @@ class RecursiveResolver extends DNSResolver {
  */
 
 class ResolveContext {
-  constructor(qs, ns, hops) {
+  constructor (qs, ns, hops) {
     this.question = qs;
     this.ns = ns;
     this.hops = hops;
@@ -702,32 +675,32 @@ class ResolveContext {
     this.switchZone(ns);
   }
 
-  switchZone(auth) {
+  switchZone (auth) {
     this.auth = auth;
     this.zones.push(auth.zone);
     return this;
   }
 
-  follow(alias, chased) {
+  follow (alias, chased) {
     this.qs.name = alias;
     this.ds = [];
     this.aliases.add(alias);
 
-    for (const rr of chased)
-      this.chased.push(rr);
+    for (const rr of chased) { this.chased.push(rr); }
 
     return this;
   }
 
-  hop() {
-    if (this.hops >= this.maxReferrals)
+  hop () {
+    if (this.hops >= this.maxReferrals) {
       throw new Error('Maximum referrals exceeded.');
+    }
 
     this.hops += 1;
     return this;
   }
 
-  toAnswer() {
+  toAnswer () {
     const res = new Message();
 
     res.id = this.res.id;
@@ -762,7 +735,7 @@ RecursiveResolver.native = 0;
  * Helpers
  */
 
-function collapseChain(name, records) {
+function collapseChain (name, records) {
   const chased = [];
   const map = new Map();
   const sigs = new Map();
@@ -776,8 +749,7 @@ function collapseChain(name, records) {
     }
 
     if (rr.type === types.RRSIG) {
-      if (rd.typeCovered === types.CNAME)
-        sigs.set(rr.name.toLowerCase(), rr);
+      if (rd.typeCovered === types.CNAME) { sigs.set(rr.name.toLowerCase(), rr); }
       continue;
     }
   }
@@ -789,30 +761,27 @@ function collapseChain(name, records) {
     const cname = map.get(qname);
     const sig = sigs.get(qname);
 
-    if (!cname)
-      break;
+    if (!cname) { break; }
 
     canonical = cname.data.target;
     qname = canonical.toLowerCase();
 
     chased.push(cname);
 
-    if (sig)
-      chased.push(sig);
+    if (sig) { chased.push(sig); }
   }
 
   return [canonical, chased];
 }
 
-function isAlias(answer, qs) {
+function isAlias (answer, qs) {
   const rrs = filterSet(answer, types.RRSIG);
 
-  if (rrs.length === 0)
-    return ['', null];
+  if (rrs.length === 0) { return ['', null]; }
 
   if (rrs.length > 1) {
-    if (!hasAll(rrs, types.CNAME)
-        || qs.type === types.CNAME) {
+    if (!hasAll(rrs, types.CNAME) ||
+        qs.type === types.CNAME) {
       return ['', null];
     }
 
@@ -826,8 +795,8 @@ function isAlias(answer, qs) {
 
   switch (rr.type) {
     case types.CNAME: {
-      if (qs.type === types.CNAME
-          || !equal(qs.name, rr.name)) {
+      if (qs.type === types.CNAME ||
+          !equal(qs.name, rr.name)) {
         return ['', null];
       }
 
@@ -835,17 +804,14 @@ function isAlias(answer, qs) {
     }
 
     case types.DNAME: {
-      if (qs.type === types.DNAME)
-        return ['', null];
+      if (qs.type === types.DNAME) { return ['', null]; }
 
-      if (!isSubdomain(rr.name, qs.name))
-        return ['', null];
+      if (!isSubdomain(rr.name, qs.name)) { return ['', null]; }
 
       const bottom = qs.name.slice(0, -rr.name.length);
       const alias = bottom + rd.target;
 
-      if (!util.isName(alias))
-        throw new Error('Invalid DNAME.');
+      if (!util.isName(alias)) { throw new Error('Invalid DNAME.'); }
 
       return [alias, answer];
     }

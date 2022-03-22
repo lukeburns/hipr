@@ -36,7 +36,7 @@ const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 const { RecursiveServer, createDS } = require('../index')
 
 const dnssec = process.argv.indexOf('--nodnssec') < 0
-const server = new RecursiveServer({ tcp: true, inet6: false, edns: true, dnssec })
+const server = new RecursiveServer({ maxReferrals: 40, tcp: true, inet6: false, edns: true, dnssec })
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {

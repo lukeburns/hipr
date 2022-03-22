@@ -15,7 +15,7 @@ const RecursiveResolver = require('./RecursiveResolver');
  */
 
 class RecursiveServer extends DNSServer {
-  constructor(options={}) {
+  constructor (options = {}) {
     super(options);
     this.resolver = new RecursiveResolver(options);
     this.resolver.on('log', (...args) => this.emit('log', ...args));
@@ -28,19 +28,19 @@ class RecursiveServer extends DNSServer {
     return this.resolver.use(...args);
   }
 
-  get cache() {
+  get cache () {
     return this.resolver.cache;
   }
 
-  set cache(value) {
+  set cache (value) {
     this.resolver.cache = value;
   }
 
-  get hints() {
+  get hints () {
     return this.resolver.hints;
   }
 
-  set hints(value) {
+  set hints (value) {
     this.resolver.hints = value;
   }
 }
