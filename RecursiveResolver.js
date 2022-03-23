@@ -553,11 +553,16 @@ class RecursiveResolver extends DNSResolver {
         return false;
       }
     };
+    layer.hostname = hostname;
     this.layers.push(layer);
   }
 
   async middleware (rc) {
-    const layers = await Promise.all(this.layers.map(async layer => {
+    for await (const layer of this.layers) {
+      if (rc.res.aa) {
+        return false;
+      }
+
       const name = rc.qs.name.toLowerCase();
       if (await layer(name, rc, rc.qs)) {
         return false;
@@ -573,11 +578,8 @@ class RecursiveResolver extends DNSResolver {
           }
         }
       }
-
-      return true;
-    }));
-
-    return !!layers.reduce((prev, next) => prev * next, true);
+    }
+    return true;
   }
 
   async iterate (rc) {
