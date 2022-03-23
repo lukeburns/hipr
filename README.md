@@ -1,4 +1,4 @@
-# HIP-R
+# hipr
 
 A recursive resolver with middleware. Made for [HIP-5](https://github.com/handshake-org/HIPs/blob/master/HIP-0005.md) protocols.
 
