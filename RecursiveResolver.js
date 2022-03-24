@@ -15,6 +15,7 @@ const Authority = require('bns/lib/authority');
 const Cache = require('bns/lib/cache');
 const constants = require('bns/lib/constants');
 const DNSResolver = require('bns/lib/resolver/dns');
+const StubResolver = require('bns/lib/resolver/stub');
 const dnssec = require('bns/lib/dnssec');
 const encoding = require('bns/lib/encoding');
 const Hints = require('bns/lib/hints');
@@ -62,6 +63,7 @@ class RecursiveResolver extends DNSResolver {
     this.layers = [];
 
     this.initOptions(options);
+    this.stub = new StubResolver(options);
   }
 
   initOptions (options) {
@@ -118,6 +120,8 @@ class RecursiveResolver extends DNSResolver {
 
     this.hints.anchors.push(ds.clone());
     this.hints.port = port;
+
+    this.stub.setServers([`${host}:${port}`]);
 
     return this;
   }
