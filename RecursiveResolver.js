@@ -59,6 +59,7 @@ class RecursiveResolver extends DNSResolver {
     this.hints = new Hints();
     this.maxReferrals = 30;
     this.minimize = false;
+    this.authoritative = false;
     this.ub = null;
     this.layers = [];
 
@@ -99,6 +100,11 @@ class RecursiveResolver extends DNSResolver {
     if (options.protocols != null) {
       assert(Array.isArray(options.protocols));
       this.protocols = options.protocols;
+    }
+
+    if (options.authoritative != null) {
+      assert(typeof options.authoritative === 'boolean');
+      this.authoritative = options.authoritative;
     }
 
     return this;
@@ -445,7 +451,10 @@ class RecursiveResolver extends DNSResolver {
       return false;
     }
 
-    const auth = await this.pickAuthority(rc, authority, additional);
+    let auth;
+    try {
+      auth = await this.pickAuthority(rc, authority, additional);
+    } catch (err) {}
 
     if (!auth) {
       if (rc.res.isAnswer()) { return this.handleAnswer(rc); }
@@ -563,10 +572,6 @@ class RecursiveResolver extends DNSResolver {
 
   async middleware (rc) {
     for await (const layer of this.layers) {
-      if (rc.res.aa) {
-        return false;
-      }
-
       const name = rc.qs.name.toLowerCase();
       if (await layer(name, rc, rc.qs)) {
         return false;

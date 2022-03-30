@@ -36,7 +36,22 @@ const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 const { RecursiveServer, createDS } = require('../index')
 
 const dnssec = process.argv.indexOf('--nodnssec') < 0
-const server = new RecursiveServer({ maxReferrals: 40, tcp: true, inet6: false, edns: true, dnssec })
+const authoritative = process.argv.indexOf('--authoritative') >= 0
+const edns = process.argv.indexOf('--edns') >= 0
+const inet6 = process.argv.indexOf('--inet6') >= 0
+const tcp = process.argv.indexOf('--tcp') >= 0
+let maxReferrals = process.argv.indexOf('--maxReferrals')
+maxReferrals = maxReferrals >= 0 ? process.argv[maxReferrals + 1] : 40
+
+const server = new RecursiveServer({ 
+  maxReferrals, 
+  tcp, 
+  inet6, 
+  edns, 
+  dnssec, 
+  authoritative 
+})
+
 server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
@@ -69,9 +84,10 @@ if (process.argv.indexOf('--log') >= 0) {
     }
   })
 
-  if (process.argv.indexOf('--debug') >= 0) {
+  if (process.argv.indexOf('--verbose') >= 0) {
     server.on('query', (req, res, rinfo) => {
       console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
+      res.answer.length && console.log('   →', res.answer.join('\n'))
     })
     server.on('log', console.log)
     server.on('error', error => {

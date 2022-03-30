@@ -3,7 +3,10 @@ const { SOARecord, Record, codes, types } = wire;
 
 module.exports = { createDS, sendSoa };
 
-function createDS () {
+function createDS (publicKey) {
+  publicKey = publicKey || '' +
+    'T9cURJ2M/Mz9q6UsZNY+Ospyvj+Uv+tgrrWkLtPQwgU/Xu5Yk0l02Sn5ua2x' +
+    'AQfEYIzRO6v5iA+BejMeEwNP4Q==';
   const ksk = Record.fromJSON({
     name: '.',
     ttl: 10800,
@@ -13,9 +16,7 @@ function createDS () {
       flags: 257,
       protocol: 3,
       algorithm: 13,
-      publicKey: '' +
-        'T9cURJ2M/Mz9q6UsZNY+Ospyvj+Uv+tgrrWkLtPQwgU/Xu5Yk0l02Sn5ua2x' +
-        'AQfEYIzRO6v5iA+BejMeEwNP4Q=='
+      publicKey
     }
   });
   return dnssec.createDS(ksk, dnssec.hashes.SHA256);
