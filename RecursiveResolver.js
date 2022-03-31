@@ -30,6 +30,7 @@ const {
   Question,
   Record,
   types,
+  typesByVal,
   typeToString,
   codes
 } = wire;
@@ -357,8 +358,11 @@ class RecursiveResolver extends DNSResolver {
 
   insert (rc) {
     if (!rc.hit) {
-      const { qs, auth, res, chain } = rc;
+      const { qs, auth, res, chain, cacheHandlers } = rc;
+      const id = this.cache.hash(qs, auth.zone)
       this.cache.insert(qs, auth.zone, res, chain);
+      rc.cacheHandlers.forEach(f => f(id));
+      rc.cacheHandlers = [];
     }
   }
 
@@ -551,7 +555,7 @@ class RecursiveResolver extends DNSResolver {
 
       const qs = rc.qs;
       const name = qs.name.toLowerCase();
-      const type = wire.typesByVal[qs.type];
+      const type = typesByVal[qs.type];
 
       const parent = ns.name;
       this.emit('intercept:req', claim, name, type, record, rc);
@@ -616,7 +620,11 @@ class RecursiveResolver extends DNSResolver {
         rc.res.authority.length > 0) {
       if (rc.chased.length > 0) { rc.res.answer = rc.chased.concat(rc.res.answer); }
 
-      if (!rc.hit) { this.cache.insert(rc.question, rc.ns.zone, rc.res, rc.chain); }
+      if (!rc.hit) { 
+        this.cache.insert(rc.question, rc.ns.zone, rc.res, rc.chain, false);
+        rc.cacheHandlers.forEach(f => f(id));
+        rc.cacheHandlers = [];
+      }
     }
 
     return rc;
@@ -654,6 +662,9 @@ class RecursiveResolver extends DNSResolver {
   }
 
   async lookup (name, type) {
+    if (typeof type === 'string') {
+      type = types[type];
+    }
     const qs = new Question(name, type);
     return this.resolve(qs);
   }
@@ -683,6 +694,7 @@ class ResolveContext {
     this.res = null;
     this.hit = false;
     this.maxReferrals = 30;
+    this.cacheHandlers = [];
     this.switchZone(ns);
   }
 

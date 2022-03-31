@@ -37,9 +37,9 @@ const { RecursiveServer, createDS } = require('../index')
 
 const dnssec = process.argv.indexOf('--nodnssec') < 0
 const authoritative = process.argv.indexOf('--authoritative') >= 0
-const edns = process.argv.indexOf('--edns') >= 0
+const edns = process.argv.indexOf('--noedns') < 0
+const tcp = process.argv.indexOf('--notcp') < 0
 const inet6 = process.argv.indexOf('--inet6') >= 0
-const tcp = process.argv.indexOf('--tcp') >= 0
 let maxReferrals = process.argv.indexOf('--maxReferrals')
 maxReferrals = maxReferrals >= 0 ? process.argv[maxReferrals + 1] : 40
 
@@ -110,6 +110,7 @@ for (const name of requires) {
 }
 
 server.bind(serverPort, serverHost)
+
 console.log(`listening on ${serverHost}:${serverPort}`)
 console.log(`resolving with ${rootHost}:${rootPort}`)
 
