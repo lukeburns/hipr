@@ -288,8 +288,7 @@ class RecursiveResolver extends DNSResolver {
       const zone = nsmap.get(rr.name.toLowerCase());
 
       if (rr.name === qs.name) {
-        rc.res.answer = [rr];
-        break;
+        rc.res.answer.push(rr);
       }
 
       if (!zone) { continue; }
@@ -620,7 +619,8 @@ class RecursiveResolver extends DNSResolver {
         rc.res.authority.length > 0) {
       if (rc.chased.length > 0) { rc.res.answer = rc.chased.concat(rc.res.answer); }
 
-      if (!rc.hit) { 
+      if (!rc.hit) {
+        const id = this.cache.hash(rc.question, rc.ns.zone);
         this.cache.insert(rc.question, rc.ns.zone, rc.res, rc.chain, false);
         rc.cacheHandlers.forEach(f => f(id));
         rc.cacheHandlers = [];
