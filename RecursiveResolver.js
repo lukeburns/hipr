@@ -358,7 +358,7 @@ class RecursiveResolver extends DNSResolver {
   insert (rc) {
     if (!rc.hit) {
       const { qs, auth, res, chain, cacheHandlers } = rc;
-      const id = this.cache.hash(qs, auth.zone)
+      const id = this.cache.hash(qs, auth.zone);
       this.cache.insert(qs, auth.zone, res, chain);
       rc.cacheHandlers.forEach(f => f(id));
       rc.cacheHandlers = [];
@@ -556,7 +556,6 @@ class RecursiveResolver extends DNSResolver {
       const name = qs.name.toLowerCase();
       const type = typesByVal[qs.type];
 
-      const parent = ns.name;
       this.emit('intercept:req', claim, name, type, record, rc);
       const res = await handler.call(this, claim.params, name, type, rc.res, rc, record);
       this.emit('intercept:res', claim, name, type, record, res, rc);

@@ -33,7 +33,7 @@ rootPort = parseInt(rootPort || 53)
 
 const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
-const { RecursiveServer, createDS } = require('../index')
+const { AuthServer, RecursiveServer, createDS } = require('../index')
 
 const dnssec = process.argv.indexOf('--nodnssec') < 0
 const authoritative = process.argv.indexOf('--authoritative') >= 0
@@ -43,16 +43,27 @@ const inet6 = process.argv.indexOf('--inet6') >= 0
 let maxReferrals = process.argv.indexOf('--maxReferrals')
 maxReferrals = maxReferrals >= 0 ? process.argv[maxReferrals + 1] : 40
 
-const server = new RecursiveServer({ 
-  maxReferrals, 
-  tcp, 
-  inet6, 
-  edns, 
-  dnssec, 
-  authoritative 
-})
+let server
+if (!authoritative) {
+  server = new RecursiveServer({ 
+    maxReferrals, 
+    tcp, 
+    inet6, 
+    edns, 
+    dnssec, 
+    authoritative 
+  })
+  server.resolver.setStub(rootHost, rootPort, createDS())
+} else {
+  server = new AuthServer({ 
+    tcp, 
+    inet6, 
+    edns, 
+    dnssec
+  })
+  server.resolver.setServers([`${rootHost}:${rootPort}`])
+}
 
-server.resolver.setStub(rootHost, rootPort, createDS())
 
 if (process.argv.indexOf('--log') >= 0) {
   server.resolver.on('intercept:req', (claim, name, type, ns) => {
