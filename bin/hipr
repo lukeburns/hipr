@@ -33,8 +33,9 @@ rootPort = parseInt(rootPort || 53)
 
 const requires = (process.argv[2] || '').split(':').filter(x => !!x)
 
-const { AuthServer, RecursiveServer, createDS } = require('../index')
+const { AuthServer, RecursiveServer, UnboundServer, createDS } = require('../index')
 
+const bns = process.argv.indexOf('--bns') >=0
 const dnssec = process.argv.indexOf('--nodnssec') < 0
 const authoritative = process.argv.indexOf('--authoritative') >= 0
 const edns = process.argv.indexOf('--noedns') < 0
@@ -43,27 +44,20 @@ const inet6 = process.argv.indexOf('--inet6') >= 0
 let maxReferrals = process.argv.indexOf('--maxReferrals')
 maxReferrals = maxReferrals >= 0 ? process.argv[maxReferrals + 1] : 40
 
-let server
-if (!authoritative) {
-  server = new RecursiveServer({ 
-    maxReferrals, 
-    tcp, 
-    inet6, 
-    edns, 
-    dnssec, 
-    authoritative 
-  })
-  server.resolver.setStub(rootHost, rootPort, createDS())
-} else {
-  server = new AuthServer({ 
-    tcp, 
-    inet6, 
-    edns, 
-    dnssec
-  })
-  server.resolver.setServers([`${rootHost}:${rootPort}`])
-}
+//
+// AUTHORITATIVE
+//
 
+// todo:
+// - fix dnssec (ad bit)
+
+const server = new AuthServer({ 
+  tcp, 
+  inet6, 
+  edns, 
+  dnssec
+})
+server.resolver.setServers([`${rootHost}:${rootPort}`])
 
 if (process.argv.indexOf('--log') >= 0) {
   server.resolver.on('intercept:req', (claim, name, type, ns) => {
@@ -120,10 +114,48 @@ for (const name of requires) {
   }
 }
 
-server.bind(serverPort, serverHost)
+const intHost = serverHost
+const intPort = serverPort - 10
 
-console.log(`listening on ${serverHost}:${serverPort}`)
+server.bind(intPort, intHost)
+
+console.log(`auth listening on ${intHost}:${intPort}`)
 console.log(`resolving with ${rootHost}:${rootPort}`)
+
+//
+// RECURSIVE
+//
+
+// todo:
+// - cache handling https://github.com/NLnetLabs/unbound/pull/64
+
+if (!authoritative) {
+  console.log('recursive resolver:', bns ? 'bns' : 'unbound')
+  const recursive = new (bns ? RecursiveServer : UnboundServer)({ 
+    maxReferrals, 
+    tcp, 
+    inet6, 
+    edns, 
+    dnssec, 
+    authoritative 
+  })
+  recursive.resolver.setStub(intHost, intPort, createDS())
+  recursive.bind(serverPort, serverHost)
+  console.log(`recursive listening on ${serverHost}:${serverPort}`)
+
+  if (process.argv.indexOf('-vr') >= 0) {
+    recursive.on('query', (req, res, rinfo) => {
+      console.log(util.inspect(req.question[0], { breakLength: Infinity, colors: true }))
+      res.answer.length && console.log('   →', res.answer.join('\n'))
+    })
+    recursive.on('log', console.log)
+    recursive.on('error', error => {
+      console.log(error.message)
+    })
+  }
+}
+
+// ---
 
 function requiref (modulePath) {
   try {
